@@ -1,0 +1,19 @@
+[package]
+name = "msg_box"
+version = "0.1.0"
+authors = ["Willi Kappler <grandor@gmx.de>"]
+license = "MIT"
+repository = "https://github.com/willi-kappler/msg_box"
+description = "A message box system"
+readme = "README.md"
+exclude = ["target"]
+keywords = ["message", "msg"]
+categories = ["Science"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+lazy_static = "1.4.0"
+
+[profile.release]
+lto = true
