@@ -140,4 +140,3 @@ fn send_fail() {
         _ => unreachable!()
     }
 }
-
