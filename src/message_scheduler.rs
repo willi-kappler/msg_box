@@ -7,7 +7,6 @@ use crate::message_error::MessageError;
 use crate::message::Message;
 
 // External modules
-use log::warn;
 use lazy_static::lazy_static;
 
 
@@ -39,7 +38,7 @@ impl MessageScheduler {
         Ok(())
     }
 
-    pub(crate) fn send(&mut self, message: Message) {
+    pub(crate) fn send(&mut self, message: Message) -> Result<(), MessageError> {
         let receiver = message.receiver.clone();
 
         for (name, queue) in self.queues.iter_mut() {
@@ -47,14 +46,14 @@ impl MessageScheduler {
                 match queue.lock() {
                     Ok(mut queue) => {
                         queue.add(message);
-                        return
+                        return Ok(())
                     }
-                    _ => {}
+                    _ => return Err(MessageError::MutexError)
                 }
             }
         }
 
-        warn!("Msg_Box: Receiver not found: {}", receiver);
+        Err(MessageError::ReceiverNotFound(receiver))
     }
 
     pub(crate) fn clear(&mut self) {
@@ -62,9 +61,9 @@ impl MessageScheduler {
     }
 }
 
-pub fn clear_scheduler() {
+pub fn clear_scheduler() -> Result<(), MessageError> {
     match MSG_SCHEDULER.lock() {
-        Ok(mut scheduler) => scheduler.clear(),
-        _ => {}
+        Ok(mut scheduler) => Ok(scheduler.clear()),
+        _ => Err(MessageError::MutexError)
     }
 }

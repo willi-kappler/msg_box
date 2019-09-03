@@ -30,14 +30,16 @@ impl MessageBox {
         })
     }
 
-    pub fn send(&mut self, receiver: &str, data: Vec<MessageData>) {
+    pub fn send(&mut self, receiver: &str, data: Vec<MessageData>) -> Result<(), MessageError> {
         match self.scheduler.lock() {
             Ok(mut scheduler) => scheduler.send(Message{
                 sender: self.name.clone(),
                 receiver: receiver.to_string(),
-                data}),
-            _ => {}
+                data})?,
+            _ => return Err(MessageError::MutexError)
         }
+
+        Ok(())
     }
 
     pub fn pop(&mut self) -> Option<Message> {
