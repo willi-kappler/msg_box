@@ -96,3 +96,35 @@ fn simple3() {
 
     assert_eq!(result, expected);
 }
+
+#[test]
+fn test_len() {
+    let mut box10 = MessageBox::new("box10").unwrap();
+    let data1 = vec![MessageData::MsgBool(true)];
+
+    assert_eq!(box10.len(), 0);
+
+    box10.send("box10", data1.clone());
+
+    assert_eq!(box10.len(), 1);
+
+    box10.send("box10", data1.clone());
+
+    assert_eq!(box10.len(), 2);
+
+    box10.send("box10", data1.clone());
+
+    assert_eq!(box10.len(), 3);
+
+    box10.pop();
+
+    assert_eq!(box10.len(), 2);
+
+    box10.pop();
+
+    assert_eq!(box10.len(), 1);
+
+    box10.pop();
+
+    assert_eq!(box10.len(), 0);
+}
