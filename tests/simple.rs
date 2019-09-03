@@ -4,17 +4,17 @@ use msg_box::prelude::*;
 
 #[test]
 fn empty() {
-    let mut box3 = MessageBox::new("box3").unwrap();
+    let mut box1 = MessageBox::new("box1").unwrap();
 
-    let result = box3.pop();
+    let result = box1.pop();
 
     assert_eq!(result, None);
 }
 
 #[test]
 fn name_in_use() {
-    let box_name = "box4".to_string();
-    let _box1 = MessageBox::new(&box_name).unwrap();
+    let box_name = "box2".to_string();
+    let _box2 = MessageBox::new(&box_name).unwrap();
 
     match MessageBox::new(&box_name) {
         Err(e) => assert_eq!(e, MessageError::NameAlreadyUsed(box_name)),
@@ -24,15 +24,15 @@ fn name_in_use() {
 
 #[test]
 fn simple1() {
-    let mut box1 = MessageBox::new("box1").unwrap();
-    let mut box2 = MessageBox::new("box2").unwrap();
+    let mut box3 = MessageBox::new("box3").unwrap();
+    let mut box4 = MessageBox::new("box4").unwrap();
 
     let data1 = vec![MessageData::MsgString("Hello World!".to_string())];
     let data2 = data1.clone();
 
-    box1.send("box2", data1);
-    let result = box2.pop().unwrap();
-    let expected = Message{sender: "box1".to_string(), receiver: "box2".to_string(), data: data2};
+    box3.send("box4", data1);
+    let result = box4.pop().unwrap();
+    let expected = Message{sender: "box3".to_string(), receiver: "box4".to_string(), data: data2};
 
     assert_eq!(result, expected);
 }
@@ -128,3 +128,16 @@ fn test_len() {
 
     assert_eq!(box10.len(), 0);
 }
+
+#[test]
+fn send_fail() {
+    let mut box11 = MessageBox::new("box11").unwrap();
+    let data1 = vec![MessageData::MsgBool(true)];
+    let unknown_box = "unknown_box".to_string();
+
+    match box11.send(&unknown_box, data1) {
+        Err(e) => assert_eq!(e, MessageError::ReceiverNotFound(unknown_box)),
+        _ => unreachable!()
+    }
+}
+
