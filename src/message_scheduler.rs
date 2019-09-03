@@ -56,4 +56,15 @@ impl MessageScheduler {
 
         warn!("Msg_Box: Receiver not found: {}", receiver);
     }
+
+    pub(crate) fn clear(&mut self) {
+        self.queues.clear();
+    }
+}
+
+pub fn clear_scheduler() {
+    match MSG_SCHEDULER.lock() {
+        Ok(mut scheduler) => scheduler.clear(),
+        _ => {}
+    }
 }

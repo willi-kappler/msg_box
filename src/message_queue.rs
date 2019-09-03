@@ -7,19 +7,19 @@ pub(crate) struct MessageQueue {
 }
 
 impl MessageQueue {
-    pub fn new() -> MessageQueue {
+    pub(crate) fn new() -> MessageQueue {
         MessageQueue{messages: Vec::new()}
     }
 
-    pub fn add(&mut self, message: Message) {
+    pub(crate) fn add(&mut self, message: Message) {
         self.messages.push(message);
     }
 
-    pub fn pop(&mut self) -> Option<Message> {
+    pub(crate) fn pop(&mut self) -> Option<Message> {
         self.messages.pop()
     }
 
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.messages.len()
     }
 }

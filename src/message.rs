@@ -1,7 +1,7 @@
 
 use crate::message_data::MessageData;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     pub sender: String,
     pub receiver: String,

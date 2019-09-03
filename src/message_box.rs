@@ -16,8 +16,9 @@ pub struct MessageBox {
 }
 
 impl MessageBox {
-    pub fn new(name: String) -> Result<MessageBox, MessageError> {
+    pub fn new(name: &str) -> Result<MessageBox, MessageError> {
         let queue = Arc::new(Mutex::new(MessageQueue::new()));
+        let name = name.to_string();
 
         match MSG_SCHEDULER.lock() {
             Ok(mut scheduler) => scheduler.add(name.clone(), queue.clone())?,
@@ -29,9 +30,12 @@ impl MessageBox {
         })
     }
 
-    pub fn send(&mut self, receiver: String, data: Vec<MessageData>) {
+    pub fn send(&mut self, receiver: &str, data: Vec<MessageData>) {
         match self.scheduler.lock() {
-            Ok(mut scheduler) => scheduler.send(Message{sender: self.name.clone(), receiver, data}),
+            Ok(mut scheduler) => scheduler.send(Message{
+                sender: self.name.clone(),
+                receiver: receiver.to_string(),
+                data}),
             _ => {}
         }
     }

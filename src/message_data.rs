@@ -1,5 +1,5 @@
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MessageData {
     MsgBool(bool),
     MsgU8(u8),
@@ -10,6 +10,8 @@ pub enum MessageData {
     MsgI32(i32),
     MsgU64(u64),
     MsgI64(i64),
+    MsgF32(f32),
+    MsgF64(f64),
     MsgChar(char),
     MsgString(String),
 }
