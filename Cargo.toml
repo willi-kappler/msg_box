@@ -13,7 +13,8 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
-lazy_static = "1.4.0"
 
 [profile.release]
 lto = true
+codegen-units = 1
+target-cpu="native"

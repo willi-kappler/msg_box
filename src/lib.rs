@@ -1,16 +1,5 @@
+mod msg_box;
 
-
-mod message_scheduler;
-mod message_queue;
-mod message_box;
-mod message;
-mod message_data;
-mod message_error;
-
-pub mod prelude {
-    pub use crate::message_box::MessageBox;
-    pub use crate::message::Message;
-    pub use crate::message_data::MessageData;
-    pub use crate::message_scheduler::clear_scheduler;
-    pub use crate::message_error::MessageError;
-}
+pub use msg_box::{MsgData, MsgBox, new_msg_box, add_new_receiver, remove_receiver, send_message, get_next_message,
+    add_new_group, remove_group, send_message_to_group
+};
