@@ -35,32 +35,32 @@ impl From<PoisonError<MutexGuard<'_, MsgBoxIntern>>> for MsgError {
     }
 }
 
-fn get_receiver_index(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> Option<usize> {
+fn get_receiver_index(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> Result<usize, MsgError> {
     for (i, item) in msg_box.queue.iter().enumerate() {
         if item.0 == receiver {
-            return Some(i)
+            return Ok(i)
         }
     }
 
-    None
+    Err(MsgError::ReceiverNotFound(receiver.to_string()))
 }
 
 fn has_receiver(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> bool {
-    get_receiver_index(msg_box, receiver).is_some()
+    get_receiver_index(msg_box, receiver).is_ok()
 }
 
-fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Option<usize> {
+fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Result<usize, MsgError> {
     for (i, item) in msg_box.groups.iter().enumerate() {
         if item.0 == group {
-            return Some(i)
+            return Ok(i)
         }
     }
 
-    None
+    Err(MsgError::GroupNotFound(group.to_string()))
 }
 
 fn has_group(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> bool {
-    get_group_index(msg_box, group).is_some()
+    get_group_index(msg_box, group).is_ok()
 }
 
 pub fn new_msg_box(max_size: usize) -> MsgBox {
@@ -86,16 +86,11 @@ pub fn add_new_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError
 
 pub fn remove_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
+    let i = get_receiver_index(&msg_box, receiver)?;
 
-    match get_receiver_index(&msg_box, receiver) {
-        Some(i) => {
-            msg_box.queue.remove(i);
-            Ok(())
-        }
-        None => {
-            Err(MsgError::ReceiverNotFound(receiver.to_string()))
-        }
-    }
+    msg_box.queue.remove(i);
+
+    Ok(())
 }
 
 pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
@@ -111,85 +106,59 @@ pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
 
 pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
+    let i = get_group_index(&msg_box, group)?;
 
-    match get_group_index(&msg_box, group) {
-        Some(i) => {
-            msg_box.groups.remove(i);
-            Ok(())
-        }
-        None => {
-            Err(MsgError::GroupNotFound(group.to_string()))
-        }
-    }
+    msg_box.groups.remove(i);
+
+    Ok(())
 }
 
 pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
+    let i = get_group_index(&msg_box, group)?;
 
-    match get_group_index(&msg_box, group) {
-        Some(i) => {
-            if has_receiver(&msg_box, receiver) {
-                msg_box.groups[i].1.push(receiver.to_string());
-                Ok(())
-            } else {
-                Err(MsgError::ReceiverNotFound(receiver.to_string()))
-            }
-        }
-        None => {
-            Err(MsgError::GroupNotFound(group.to_string()))
-        }
-    }
+    msg_box.groups[i].1.push(receiver.to_string());
+
+    Ok(())
 }
 
 fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
-    match get_receiver_index(&msg_box, receiver) {
-        Some(i) => {
-            msg_box.queue[i].1.insert(0, (sender.to_string(), message));
-            let max_size = msg_box.max_size;
-            if msg_box.queue[i].1.len() > max_size {
-                msg_box.queue[i].1.truncate(max_size)
-            }
-            Ok(())
-        }
-        None => {
-            Err(MsgError::ReceiverNotFound(receiver.to_string()))
-        }
+    let i = get_receiver_index(&msg_box, receiver)?;
+
+    msg_box.queue[i].1.insert(0, (sender.to_string(), message));
+
+    let max_size = msg_box.max_size;
+
+    if msg_box.queue[i].1.len() > max_size {
+        msg_box.queue[i].1.truncate(max_size)
     }
+
+    Ok(())
 }
 
 pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
+
     send_message_intern(&mut msg_box, sender, receiver, message)
 }
 
 pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
+    let i = get_group_index(&msg_box, group)?;
 
-    match get_group_index(&msg_box, group) {
-        Some(i) => {
-            // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
-            let groups = msg_box.groups[i].clone();
+    // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
+    let groups = msg_box.groups[i].clone();
 
-            for receiver in groups.1.iter() {
-                send_message_intern(&mut msg_box, sender, receiver, message.clone())?
-            }
-            Ok(())
-        }
-        None => {
-            Err(MsgError::GroupNotFound(group.to_string()))
-        }
+    for receiver in groups.1.iter() {
+        send_message_intern(&mut msg_box, sender, receiver, message.clone())?
     }
+
+    Ok(())
 }
 
 pub fn get_next_message(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, MsgData)>, MsgError> {
     let mut msg_box = msg_box.lock()?;
+    let i = get_receiver_index(&msg_box, receiver)?;
 
-    match get_receiver_index(&msg_box, receiver) {
-        Some(i) => {
-            Ok(msg_box.queue[i].1.pop())
-        }
-        None => {
-            Err(MsgError::ReceiverNotFound(receiver.to_string()))
-        }
-    }
+    Ok(msg_box.queue[i].1.pop())
 }
