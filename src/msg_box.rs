@@ -129,9 +129,7 @@ fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, rec
 
     let max_size = msg_box.max_size;
 
-    if msg_box.queue[i].1.len() > max_size {
-        msg_box.queue[i].1.truncate(max_size)
-    }
+    msg_box.queue[i].1.truncate(max_size);
 
     Ok(())
 }
