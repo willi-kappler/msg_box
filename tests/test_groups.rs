@@ -38,3 +38,33 @@ fn test_group1() {
     let result = get_next_message(&mb, "receiver03").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(17))));
 }
+
+#[test]
+fn test_max_size() {
+    let mb = new_msg_box(3);
+
+    add_new_receiver(&mb, "receiver01").unwrap();
+    add_new_receiver(&mb, "receiver02").unwrap();
+    add_new_receiver(&mb, "receiver03").unwrap();
+    add_new_receiver(&mb, "sender01").unwrap();
+
+    add_new_group(&mb, "group1").unwrap();
+    add_receiver_to_group(&mb, "group1", "receiver01").unwrap();
+    add_receiver_to_group(&mb, "group1", "receiver02").unwrap();
+    add_receiver_to_group(&mb, "group1", "receiver03").unwrap();
+
+    send_message_to_group(&mb, "sender01", "group1", MsgData::Mu8(20)).unwrap();
+    send_message_to_group(&mb, "sender01", "group1", MsgData::Mu8(21)).unwrap();
+    send_message_to_group(&mb, "sender01", "group1", MsgData::Mu8(22)).unwrap();
+    send_message_to_group(&mb, "sender01", "group1", MsgData::Mu8(23)).unwrap();
+
+    let result = get_next_message(&mb, "receiver01").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(21))));
+
+    let result = get_next_message(&mb, "receiver02").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(21))));
+
+    let result = get_next_message(&mb, "receiver03").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(21))));
+}
+
