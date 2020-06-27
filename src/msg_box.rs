@@ -3,13 +3,13 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 // use log::{error, debug};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MsgData {
-    M_u8(u8),
-    M_u16(u16),
-    M_u32(u32),
-    M_u64(u64),
-    M_bool(bool),
-    M_char(char),
-    M_string(String),
+    Mu8(u8),
+    Mu16(u16),
+    Mu32(u32),
+    Mu64(u64),
+    Mbool(bool),
+    Mchar(char),
+    Mstring(String),
 }
 #[derive(Debug, Clone)]
 pub struct MsgBoxIntern {
@@ -31,7 +31,7 @@ pub enum MsgError {
 }
 
 impl From<PoisonError<MutexGuard<'_, MsgBoxIntern>>> for MsgError {
-    fn from(err: PoisonError<MutexGuard<MsgBoxIntern>>) -> MsgError {
+    fn from(_err: PoisonError<MutexGuard<MsgBoxIntern>>) -> MsgError {
         MsgError::CouldNotLockMutex
     }
 }
@@ -149,6 +149,10 @@ pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: Msg
         match get_receiver_index(&msg_box, receiver) {
             Some(i) => {
                 msg_box.queue[i].1.insert(0, (sender.to_string(), message));
+                let max_size = msg_box.max_size;
+                if msg_box.queue[i].1.len() > max_size {
+                    msg_box.queue[i].1.truncate(max_size)
+                }
                 return Ok(())
             }
             None => {
