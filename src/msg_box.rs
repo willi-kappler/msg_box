@@ -45,12 +45,16 @@ fn has_receiver(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> bool {
 }
 
 fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Option<usize> {
-    // TODO
+    for (i, item) in msg_box.groups.iter().enumerate() {
+        if item.0 == group {
+            return Some(i)
+        }
+    }
+
     None
 }
 
 fn has_group(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> bool {
-    // TODO
     get_group_index(msg_box, group).is_some()
 }
 
@@ -102,8 +106,12 @@ pub fn remove_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError>
 pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
     match msg_box.lock() {
         Ok(mut msg_box) => {
-            // TODO
-            Ok(())
+            if has_group(&msg_box, group) {
+                Err(MsgError::GroupAlreadyAvailable(group.to_string()))
+            } else {
+                msg_box.groups.push((group.to_string(), Vec::new()));
+                Ok(())
+            }
         }
         Err(e) => {
             Err(MsgError::CouldNotLockMutex)
@@ -114,8 +122,15 @@ pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
 pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
     match msg_box.lock() {
         Ok(mut msg_box) => {
-            // TODO
-            Ok(())
+            match get_group_index(&msg_box, group) {
+                Some(i) => {
+                    msg_box.groups.remove(i);
+                    Ok(())
+                }
+                None => {
+                    Err(MsgError::GroupNotFound(group.to_string()))
+                }
+            }
         }
         Err(e) => {
             Err(MsgError::CouldNotLockMutex)
@@ -126,8 +141,19 @@ pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
 pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> Result<(), MsgError> {
     match msg_box.lock() {
         Ok(mut msg_box) => {
-            // TODO
-            Ok(())
+            match get_group_index(&msg_box, group) {
+                Some(i) => {
+                    if has_receiver(&msg_box, receiver) {
+                        msg_box.groups[i].1.push(receiver.to_string());
+                        Ok(())
+                    } else {
+                        Err(MsgError::ReceiverNotFound(receiver.to_string()))
+                    }
+                }
+                None => {
+                    Err(MsgError::GroupNotFound(group.to_string()))
+                }
+            }
         }
         Err(e) => {
             Err(MsgError::CouldNotLockMutex)
@@ -162,10 +188,26 @@ pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, messag
     match msg_box.lock() {
         Ok(mut msg_box) => {
             if has_receiver(&msg_box, sender) {
-                // TODO
-                Ok(())
+                match get_group_index(&msg_box, group) {
+                    Some(i) => {
+                        // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
+                        let groups = msg_box.groups[i].clone();
+
+                        for receiver in groups.1.iter() {
+                            if has_receiver(&msg_box, receiver) {
+                                msg_box.queue[i].1.insert(0, (sender.to_string(), message.clone()));
+                            } else {
+                                return Err(MsgError::ReceiverNotFound(receiver.to_string()))
+                            }
+                        }
+                        Ok(())
+                    }
+                    None => {
+                        Err(MsgError::GroupNotFound(group.to_string()))
+                    }
+                }
             } else {
-                Err(MsgError::GroupNotFound(sender.to_string()))
+                Err(MsgError::SenderNotFound(sender.to_string()))
             }
         }
         Err(e) => {
