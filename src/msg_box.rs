@@ -174,10 +174,13 @@ pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, messag
                 let groups = msg_box.groups[i].clone();
 
                 for receiver in groups.1.iter() {
-                    if has_receiver(&msg_box, receiver) {
-                        msg_box.queue[i].1.insert(0, (sender.to_string(), message.clone()));
-                    } else {
-                        return Err(MsgError::ReceiverNotFound(receiver.to_string()))
+                    match get_receiver_index(&msg_box, receiver) {
+                        Some(i) => {
+                            msg_box.queue[i].1.insert(0, (sender.to_string(), message.clone()));
+                        }
+                        None => {
+                            return Err(MsgError::ReceiverNotFound(receiver.to_string()))
+                        }
                     }
                 }
                 Ok(())
