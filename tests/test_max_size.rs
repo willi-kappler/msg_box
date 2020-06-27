@@ -5,7 +5,6 @@ fn test_max_size1_1() {
     let mb = new_msg_box(1);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
 
@@ -18,7 +17,6 @@ fn test_max_size1_2() {
     let mb = new_msg_box(1);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();
@@ -32,7 +30,6 @@ fn test_max_size1_3() {
     let mb = new_msg_box(1);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();
@@ -47,7 +44,6 @@ fn test_max_size2_1() {
     let mb = new_msg_box(2);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
 
@@ -60,7 +56,6 @@ fn test_max_size2_2() {
     let mb = new_msg_box(2);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();
@@ -74,7 +69,6 @@ fn test_max_size2_3() {
     let mb = new_msg_box(2);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();
@@ -89,7 +83,6 @@ fn test_max_size3_1() {
     let mb = new_msg_box(3);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
 
@@ -102,7 +95,6 @@ fn test_max_size3_2() {
     let mb = new_msg_box(3);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();
@@ -116,7 +108,6 @@ fn test_max_size3_3() {
     let mb = new_msg_box(3);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();
@@ -131,7 +122,6 @@ fn test_max_size3_4() {
     let mb = new_msg_box(3);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(17)).unwrap();

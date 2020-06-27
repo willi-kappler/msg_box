@@ -5,7 +5,6 @@ fn create_msg_box() {
     let mb = new_msg_box(64);
 
     add_new_receiver(&mb, "receiver01").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
 
@@ -19,7 +18,6 @@ fn test_two_receivers() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mstring("Hello".to_string())).unwrap();
     send_message(&mb, "sender01", "receiver02", MsgData::Mstring("World".to_string())).unwrap();
@@ -37,8 +35,6 @@ fn test_two_senders() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
-    add_new_receiver(&mb, "sender02").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mstring("Hello".to_string())).unwrap();
     send_message(&mb, "sender01", "receiver02", MsgData::Mstring("World".to_string())).unwrap();
@@ -64,7 +60,6 @@ fn test_empty() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16)).unwrap();
 
@@ -84,7 +79,6 @@ fn test_types() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     send_message(&mb, "sender01", "receiver01", MsgData::Mu8(8)).unwrap();
     send_message(&mb, "sender01", "receiver02", MsgData::Mu16(16)).unwrap();

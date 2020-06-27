@@ -7,7 +7,6 @@ fn test_group1() {
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
     add_new_receiver(&mb, "receiver03").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     add_new_group(&mb, "group1").unwrap();
     add_receiver_to_group(&mb, "group1", "receiver01").unwrap();
@@ -46,7 +45,6 @@ fn test_max_size() {
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
     add_new_receiver(&mb, "receiver03").unwrap();
-    add_new_receiver(&mb, "sender01").unwrap();
 
     add_new_group(&mb, "group1").unwrap();
     add_receiver_to_group(&mb, "group1", "receiver01").unwrap();
@@ -67,4 +65,3 @@ fn test_max_size() {
     let result = get_next_message(&mb, "receiver03").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(21))));
 }
-

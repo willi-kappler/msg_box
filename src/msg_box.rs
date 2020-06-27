@@ -23,7 +23,6 @@ pub type MsgBox = Arc<Mutex<MsgBoxIntern>>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MsgError {
     ReceiverNotFound(String),
-    SenderNotFound(String),
     ReceiverAlreadyAvailable(String),
     GroupNotFound(String),
     GroupAlreadyAvailable(String),
@@ -160,34 +159,25 @@ fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, rec
 
 pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
-
-    if has_receiver(&msg_box, sender) {
-        send_message_intern(&mut msg_box, sender, receiver, message)
-    } else {
-        Err(MsgError::SenderNotFound(sender.to_string()))
-    }
+    send_message_intern(&mut msg_box, sender, receiver, message)
 }
 
 pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
 
-    if has_receiver(&msg_box, sender) {
-        match get_group_index(&msg_box, group) {
-            Some(i) => {
-                // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
-                let groups = msg_box.groups[i].clone();
+    match get_group_index(&msg_box, group) {
+        Some(i) => {
+            // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
+            let groups = msg_box.groups[i].clone();
 
-                for receiver in groups.1.iter() {
-                    send_message_intern(&mut msg_box, sender, receiver, message.clone())?
-                }
-                Ok(())
+            for receiver in groups.1.iter() {
+                send_message_intern(&mut msg_box, sender, receiver, message.clone())?
             }
-            None => {
-                Err(MsgError::GroupNotFound(group.to_string()))
-            }
+            Ok(())
         }
-    } else {
-        Err(MsgError::SenderNotFound(sender.to_string()))
+        None => {
+            Err(MsgError::GroupNotFound(group.to_string()))
+        }
     }
 }
 
@@ -203,4 +193,3 @@ pub fn get_next_message(msg_box: &MsgBox, receiver: &str) -> Result<Option<(Stri
         }
     }
 }
-
