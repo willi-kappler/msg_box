@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 // use log::{error, debug};
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,6 +28,12 @@ pub enum MsgError {
     GroupNotFound(String),
     GroupAlreadyAvailable(String),
     CouldNotLockMutex,
+}
+
+impl From<PoisonError<MutexGuard<'_, MsgBoxIntern>>> for MsgError {
+    fn from(err: PoisonError<MutexGuard<MsgBoxIntern>>) -> MsgError {
+        MsgError::CouldNotLockMutex
+    }
 }
 
 fn get_receiver_index(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> Option<usize> {
@@ -69,167 +75,127 @@ pub fn new_msg_box(max_size: usize) -> MsgBox {
 }
 
 pub fn add_new_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            if has_receiver(&msg_box, receiver) {
-                Err(MsgError::ReceiverAlreadyAvailable(receiver.to_string()))
-            } else {
-                msg_box.queue.push((receiver.to_string(), Vec::new()));
-                Ok(())
-            }
-        }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
-        }
+    let mut msg_box = msg_box.lock()?;
+
+    if has_receiver(&msg_box, receiver) {
+        Err(MsgError::ReceiverAlreadyAvailable(receiver.to_string()))
+    } else {
+        msg_box.queue.push((receiver.to_string(), Vec::new()));
+        Ok(())
     }
 }
 
 pub fn remove_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            match get_receiver_index(&msg_box, receiver) {
-                Some(i) => {
-                    msg_box.queue.remove(i);
-                    Ok(())
-                }
-                None => {
-                    Err(MsgError::ReceiverNotFound(receiver.to_string()))
-                }
-            }
+    let mut msg_box = msg_box.lock()?;
+
+    match get_receiver_index(&msg_box, receiver) {
+        Some(i) => {
+            msg_box.queue.remove(i);
+            Ok(())
         }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
+        None => {
+            Err(MsgError::ReceiverNotFound(receiver.to_string()))
         }
     }
 }
 
 pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            if has_group(&msg_box, group) {
-                Err(MsgError::GroupAlreadyAvailable(group.to_string()))
-            } else {
-                msg_box.groups.push((group.to_string(), Vec::new()));
-                Ok(())
-            }
-        }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
-        }
+    let mut msg_box = msg_box.lock()?;
+
+    if has_group(&msg_box, group) {
+        Err(MsgError::GroupAlreadyAvailable(group.to_string()))
+    } else {
+        msg_box.groups.push((group.to_string(), Vec::new()));
+        Ok(())
     }
 }
 
 pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            match get_group_index(&msg_box, group) {
-                Some(i) => {
-                    msg_box.groups.remove(i);
-                    Ok(())
-                }
-                None => {
-                    Err(MsgError::GroupNotFound(group.to_string()))
-                }
-            }
+    let mut msg_box = msg_box.lock()?;
+
+    match get_group_index(&msg_box, group) {
+        Some(i) => {
+            msg_box.groups.remove(i);
+            Ok(())
         }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
+        None => {
+            Err(MsgError::GroupNotFound(group.to_string()))
         }
     }
 }
 
 pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            match get_group_index(&msg_box, group) {
-                Some(i) => {
-                    if has_receiver(&msg_box, receiver) {
-                        msg_box.groups[i].1.push(receiver.to_string());
-                        Ok(())
-                    } else {
-                        Err(MsgError::ReceiverNotFound(receiver.to_string()))
-                    }
-                }
-                None => {
-                    Err(MsgError::GroupNotFound(group.to_string()))
-                }
+    let mut msg_box = msg_box.lock()?;
+
+    match get_group_index(&msg_box, group) {
+        Some(i) => {
+            if has_receiver(&msg_box, receiver) {
+                msg_box.groups[i].1.push(receiver.to_string());
+                Ok(())
+            } else {
+                Err(MsgError::ReceiverNotFound(receiver.to_string()))
             }
         }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
+        None => {
+            Err(MsgError::GroupNotFound(group.to_string()))
         }
     }
 }
 
 pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            if has_receiver(&msg_box, sender) {
-                match get_receiver_index(&msg_box, receiver) {
-                    Some(i) => {
-                        msg_box.queue[i].1.insert(0, (sender.to_string(), message));
-                        return Ok(())
-                    }
-                    None => {
-                        Err(MsgError::ReceiverNotFound(receiver.to_string()))
-                    }
-                }
-            } else {
-                Err(MsgError::SenderNotFound(sender.to_string()))
+    let mut msg_box = msg_box.lock()?;
+
+    if has_receiver(&msg_box, sender) {
+        match get_receiver_index(&msg_box, receiver) {
+            Some(i) => {
+                msg_box.queue[i].1.insert(0, (sender.to_string(), message));
+                return Ok(())
+            }
+            None => {
+                Err(MsgError::ReceiverNotFound(receiver.to_string()))
             }
         }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
-        }
+    } else {
+        Err(MsgError::SenderNotFound(sender.to_string()))
     }
 }
 
 pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, message: MsgData) -> Result<(), MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            if has_receiver(&msg_box, sender) {
-                match get_group_index(&msg_box, group) {
-                    Some(i) => {
-                        // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
-                        let groups = msg_box.groups[i].clone();
+    let mut msg_box = msg_box.lock()?;
 
-                        for receiver in groups.1.iter() {
-                            if has_receiver(&msg_box, receiver) {
-                                msg_box.queue[i].1.insert(0, (sender.to_string(), message.clone()));
-                            } else {
-                                return Err(MsgError::ReceiverNotFound(receiver.to_string()))
-                            }
-                        }
-                        Ok(())
-                    }
-                    None => {
-                        Err(MsgError::GroupNotFound(group.to_string()))
+    if has_receiver(&msg_box, sender) {
+        match get_group_index(&msg_box, group) {
+            Some(i) => {
+                // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
+                let groups = msg_box.groups[i].clone();
+
+                for receiver in groups.1.iter() {
+                    if has_receiver(&msg_box, receiver) {
+                        msg_box.queue[i].1.insert(0, (sender.to_string(), message.clone()));
+                    } else {
+                        return Err(MsgError::ReceiverNotFound(receiver.to_string()))
                     }
                 }
-            } else {
-                Err(MsgError::SenderNotFound(sender.to_string()))
+                Ok(())
+            }
+            None => {
+                Err(MsgError::GroupNotFound(group.to_string()))
             }
         }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
-        }
+    } else {
+        Err(MsgError::SenderNotFound(sender.to_string()))
     }
 }
 
 pub fn get_next_message(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, MsgData)>, MsgError> {
-    match msg_box.lock() {
-        Ok(mut msg_box) => {
-            match get_receiver_index(&msg_box, receiver) {
-                Some(i) => {
-                    Ok(msg_box.queue[i].1.pop())
-                }
-                None => {
-                    Err(MsgError::ReceiverNotFound(receiver.to_string()))
-                }
-            }
+    let mut msg_box = msg_box.lock()?;
+
+    match get_receiver_index(&msg_box, receiver) {
+        Some(i) => {
+            Ok(msg_box.queue[i].1.pop())
         }
-        Err(e) => {
-            Err(MsgError::CouldNotLockMutex)
+        None => {
+            Err(MsgError::ReceiverNotFound(receiver.to_string()))
         }
     }
 }
