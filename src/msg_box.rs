@@ -67,7 +67,7 @@ fn has_group(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> bool {
 pub fn new_msg_box(max_size: usize) -> MsgBox {
     let msg_box = MsgBoxIntern {
         max_size,
-        queue: Vec::new(),
+        queue: Vec::new(), // TODO: with capacity
         groups: Vec::new(),
     };
 
@@ -142,23 +142,27 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
     }
 }
 
+fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
+    match get_receiver_index(&msg_box, receiver) {
+        Some(i) => {
+            msg_box.queue[i].1.insert(0, (sender.to_string(), message));
+            let max_size = msg_box.max_size;
+            if msg_box.queue[i].1.len() > max_size {
+                msg_box.queue[i].1.truncate(max_size)
+            }
+            Ok(())
+        }
+        None => {
+            Err(MsgError::ReceiverNotFound(receiver.to_string()))
+        }
+    }
+}
+
 pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
 
     if has_receiver(&msg_box, sender) {
-        match get_receiver_index(&msg_box, receiver) {
-            Some(i) => {
-                msg_box.queue[i].1.insert(0, (sender.to_string(), message));
-                let max_size = msg_box.max_size;
-                if msg_box.queue[i].1.len() > max_size {
-                    msg_box.queue[i].1.truncate(max_size)
-                }
-                return Ok(())
-            }
-            None => {
-                Err(MsgError::ReceiverNotFound(receiver.to_string()))
-            }
-        }
+        send_message_intern(&mut msg_box, sender, receiver, message)
     } else {
         Err(MsgError::SenderNotFound(sender.to_string()))
     }
@@ -174,14 +178,7 @@ pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, messag
                 let groups = msg_box.groups[i].clone();
 
                 for receiver in groups.1.iter() {
-                    match get_receiver_index(&msg_box, receiver) {
-                        Some(i) => {
-                            msg_box.queue[i].1.insert(0, (sender.to_string(), message.clone()));
-                        }
-                        None => {
-                            return Err(MsgError::ReceiverNotFound(receiver.to_string()))
-                        }
-                    }
+                    send_message_intern(&mut msg_box, sender, receiver, message.clone())?
                 }
                 Ok(())
             }
