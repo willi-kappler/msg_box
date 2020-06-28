@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::rc::Rc;
-use std::cell::{RefCell};
+use std::cell::RefCell;
 
 // use log::{error, debug};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MsgData {
     Mu8(u8),
@@ -39,6 +40,7 @@ impl From<PoisonError<MutexGuard<'_, MsgBoxIntern>>> for MsgError {
     }
 }
 
+// TODO: use queue instead of msg_box
 fn get_receiver_index(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> Result<usize, MsgError> {
     for (i, item) in msg_box.queue.iter().enumerate() {
         if item.0 == receiver {
@@ -126,6 +128,7 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
     Ok(())
 }
 
+// TODO: use queue instead of msg_box
 fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
     let i = get_receiver_index(&msg_box, receiver)?;
 
