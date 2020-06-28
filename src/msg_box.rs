@@ -1,4 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::rc::Rc;
+use std::cell::{RefCell};
 
 // use log::{error, debug};
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8,6 +10,7 @@ pub enum MsgData {
     Mu32(u32),
     Mu64(u64),
     Mbool(bool),
+    // TODO: Add f32, f64
     Mchar(char),
     Mstring(String),
     Mvector(Vec<MsgData>),
@@ -16,7 +19,7 @@ pub enum MsgData {
 pub struct MsgBoxIntern {
     max_size: usize,
     queue: Vec<(String, Vec<(String, MsgData)>)>,
-    groups: Vec<(String, Vec<String>)>,
+    groups: Vec<Rc<RefCell<(String, Vec<String>)>>>,
 }
 
 pub type MsgBox = Arc<Mutex<MsgBoxIntern>>;
@@ -52,7 +55,7 @@ fn has_receiver(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> bool {
 
 fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Result<usize, MsgError> {
     for (i, item) in msg_box.groups.iter().enumerate() {
-        if item.0 == group {
+        if item.borrow().0 == group {
             return Ok(i)
         }
     }
@@ -100,7 +103,7 @@ pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
     if has_group(&msg_box, group) {
         Err(MsgError::GroupAlreadyAvailable(group.to_string()))
     } else {
-        msg_box.groups.push((group.to_string(), Vec::new()));
+        msg_box.groups.push(Rc::new(RefCell::new((group.to_string(), Vec::new()))));
         Ok(())
     }
 }
@@ -115,10 +118,10 @@ pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
 }
 
 pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> Result<(), MsgError> {
-    let mut msg_box = msg_box.lock()?;
+    let msg_box = msg_box.lock()?;
     let i = get_group_index(&msg_box, group)?;
 
-    msg_box.groups[i].1.push(receiver.to_string());
+    msg_box.groups[i].borrow_mut().1.push(receiver.to_string());
 
     Ok(())
 }
@@ -145,10 +148,9 @@ pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, messag
     let mut msg_box = msg_box.lock()?;
     let i = get_group_index(&msg_box, group)?;
 
-    // TODO: Remove clone(), use Rc, RefCell, or s.th. similar
     let groups = msg_box.groups[i].clone();
 
-    for receiver in groups.1.iter() {
+    for receiver in groups.borrow().1.iter() {
         send_message_intern(&mut msg_box, sender, receiver, message.clone())?
     }
 
