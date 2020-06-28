@@ -10,6 +10,7 @@ pub enum MsgData {
     Mbool(bool),
     Mchar(char),
     Mstring(String),
+    Mvector(Vec<MsgData>),
 }
 #[derive(Debug, Clone)]
 pub struct MsgBoxIntern {

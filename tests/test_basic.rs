@@ -87,6 +87,7 @@ fn test_types() {
     send_message(&mb, "sender01", "receiver01", MsgData::Mbool(true)).unwrap();
     send_message(&mb, "sender01", "receiver02", MsgData::Mchar('X')).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mstring("cool types!".to_string())).unwrap();
+    send_message(&mb, "sender01", "receiver02", MsgData::Mvector(vec![MsgData::Mu8(50), MsgData::Mbool(false), MsgData::Mchar('R')])).unwrap();
 
     let result = get_next_message(&mb, "receiver01").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(8))));
@@ -108,4 +109,7 @@ fn test_types() {
 
     let result = get_next_message(&mb, "receiver02").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mchar('X'))));
+
+    let result = get_next_message(&mb, "receiver02").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mvector(vec![MsgData::Mu8(50), MsgData::Mbool(false), MsgData::Mchar('R')]))));
 }
