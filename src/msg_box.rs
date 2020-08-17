@@ -4,14 +4,15 @@ use std::cell::RefCell;
 
 // use log::{error, debug};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MsgData {
+    Mbool(bool),
     Mu8(u8),
     Mu16(u16),
     Mu32(u32),
     Mu64(u64),
-    Mbool(bool),
-    // TODO: Add f32, f64
+    Mf32(f32),
+    Mf64(f64),
     Mchar(char),
     Mstring(String),
     Mvector(Vec<MsgData>),

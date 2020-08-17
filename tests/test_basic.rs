@@ -80,35 +80,43 @@ fn test_types() {
     add_new_receiver(&mb, "receiver01").unwrap();
     add_new_receiver(&mb, "receiver02").unwrap();
 
-    send_message(&mb, "sender01", "receiver01", MsgData::Mu8(8)).unwrap();
-    send_message(&mb, "sender01", "receiver02", MsgData::Mu16(16)).unwrap();
-    send_message(&mb, "sender01", "receiver01", MsgData::Mu32(32)).unwrap();
-    send_message(&mb, "sender01", "receiver02", MsgData::Mu64(64)).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mbool(true)).unwrap();
+    send_message(&mb, "sender01", "receiver02", MsgData::Mu8(8)).unwrap();
+    send_message(&mb, "sender01", "receiver01", MsgData::Mu16(16)).unwrap();
+    send_message(&mb, "sender01", "receiver02", MsgData::Mu32(32)).unwrap();
+    send_message(&mb, "sender01", "receiver01", MsgData::Mu64(64)).unwrap();
+    send_message(&mb, "sender01", "receiver02", MsgData::Mf32(32.1)).unwrap();
+    send_message(&mb, "sender01", "receiver01", MsgData::Mf64(64.2)).unwrap();
     send_message(&mb, "sender01", "receiver02", MsgData::Mchar('X')).unwrap();
     send_message(&mb, "sender01", "receiver01", MsgData::Mstring("cool types!".to_string())).unwrap();
     send_message(&mb, "sender01", "receiver02", MsgData::Mvector(vec![MsgData::Mu8(50), MsgData::Mbool(false), MsgData::Mchar('R')])).unwrap();
 
     let result = get_next_message(&mb, "receiver01").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mbool(true))));
+
+    let result = get_next_message(&mb, "receiver02").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(8))));
 
     let result = get_next_message(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu32(32))));
-
-    let result = get_next_message(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mbool(true))));
-
-    let result = get_next_message(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mstring("cool types!".to_string()))));
-
-    let result = get_next_message(&mb, "receiver02").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu16(16))));
 
     let result = get_next_message(&mb, "receiver02").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu32(32))));
+
+    let result = get_next_message(&mb, "receiver01").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu64(64))));
 
     let result = get_next_message(&mb, "receiver02").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mf32(32.1))));
+
+    let result = get_next_message(&mb, "receiver01").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mf64(64.2))));
+
+    let result = get_next_message(&mb, "receiver02").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mchar('X'))));
+
+    let result = get_next_message(&mb, "receiver01").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mstring("cool types!".to_string()))));
 
     let result = get_next_message(&mb, "receiver02").unwrap();
     assert_eq!(result, Some(("sender01".to_string(), MsgData::Mvector(vec![MsgData::Mu8(50), MsgData::Mbool(false), MsgData::Mchar('R')]))));
