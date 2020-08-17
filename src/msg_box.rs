@@ -59,8 +59,8 @@ fn has_receiver(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> bool {
     get_receiver_index(&msg_box.queue, receiver).is_ok()
 }
 
-fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Result<usize, MsgError> {
-    for (i, item) in msg_box.groups.iter().enumerate() {
+fn get_group_index(groups: &MsgGroup, group: &str) -> Result<usize, MsgError> {
+    for (i, item) in groups.iter().enumerate() {
         if item.borrow().0 == group {
             return Ok(i)
         }
@@ -70,7 +70,7 @@ fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Result<us
 }
 
 fn has_group(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> bool {
-    get_group_index(msg_box, group).is_ok()
+    get_group_index(&msg_box.groups, group).is_ok()
 }
 
 pub fn new_msg_box(max_size: usize) -> MsgBox {
@@ -116,7 +116,7 @@ pub fn add_new_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
 
 pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
-    let i = get_group_index(&msg_box, group)?;
+    let i = get_group_index(&msg_box.groups, group)?;
 
     msg_box.groups.remove(i);
 
@@ -125,7 +125,7 @@ pub fn remove_group(msg_box: &MsgBox, group: &str) -> Result<(), MsgError> {
 
 pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> Result<(), MsgError> {
     let msg_box = msg_box.lock()?;
-    let i = get_group_index(&msg_box, group)?;
+    let i = get_group_index(&msg_box.groups, group)?;
 
     msg_box.groups[i].borrow_mut().1.push(receiver.to_string());
 
@@ -153,7 +153,7 @@ pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: Msg
 
 pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
-    let i = get_group_index(&msg_box, group)?;
+    let i = get_group_index(&msg_box.groups, group)?;
 
     let groups = msg_box.groups[i].clone();
 
