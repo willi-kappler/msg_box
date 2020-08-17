@@ -17,11 +17,15 @@ pub enum MsgData {
     Mstring(String),
     Mvector(Vec<MsgData>),
 }
+
+type MsgQueue = Vec<(String, Vec<(String, MsgData)>)>;
+type MsgGroup = Vec<Rc<RefCell<(String, Vec<String>)>>>;
+
 #[derive(Debug, Clone)]
 pub struct MsgBoxIntern {
     max_size: usize,
-    queue: Vec<(String, Vec<(String, MsgData)>)>,
-    groups: Vec<Rc<RefCell<(String, Vec<String>)>>>,
+    queue: MsgQueue,
+    groups: MsgGroup,
 }
 
 pub type MsgBox = Arc<Mutex<MsgBoxIntern>>;
@@ -41,9 +45,8 @@ impl From<PoisonError<MutexGuard<'_, MsgBoxIntern>>> for MsgError {
     }
 }
 
-// TODO: use queue instead of msg_box
-fn get_receiver_index(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> Result<usize, MsgError> {
-    for (i, item) in msg_box.queue.iter().enumerate() {
+fn get_receiver_index(queue: &MsgQueue, receiver: &str) -> Result<usize, MsgError> {
+    for (i, item) in queue.iter().enumerate() {
         if item.0 == receiver {
             return Ok(i)
         }
@@ -53,7 +56,7 @@ fn get_receiver_index(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> Res
 }
 
 fn has_receiver(msg_box: &MutexGuard<MsgBoxIntern>, receiver: &str) -> bool {
-    get_receiver_index(msg_box, receiver).is_ok()
+    get_receiver_index(&msg_box.queue, receiver).is_ok()
 }
 
 fn get_group_index(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> Result<usize, MsgError> {
@@ -93,7 +96,7 @@ pub fn add_new_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError
 
 pub fn remove_receiver(msg_box: &MsgBox, receiver: &str) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
-    let i = get_receiver_index(&msg_box, receiver)?;
+    let i = get_receiver_index(&msg_box.queue, receiver)?;
 
     msg_box.queue.remove(i);
 
@@ -131,7 +134,7 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
 
 // TODO: use queue instead of msg_box
 fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
-    let i = get_receiver_index(&msg_box, receiver)?;
+    let i = get_receiver_index(&msg_box.queue, receiver)?;
 
     msg_box.queue[i].1.insert(0, (sender.to_string(), message));
 
@@ -163,7 +166,7 @@ pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, messag
 
 pub fn get_next_message(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, MsgData)>, MsgError> {
     let mut msg_box = msg_box.lock()?;
-    let i = get_receiver_index(&msg_box, receiver)?;
+    let i = get_receiver_index(&msg_box.queue, receiver)?;
 
     Ok(msg_box.queue[i].1.pop())
 }
