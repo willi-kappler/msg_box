@@ -133,14 +133,12 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
 }
 
 // TODO: use queue instead of msg_box
-fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
-    let i = get_receiver_index(&msg_box.queue, receiver)?;
+fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
+    let i = get_receiver_index(queue, receiver)?;
 
-    msg_box.queue[i].1.insert(0, (sender.to_string(), message));
+    queue[i].1.insert(0, (sender.to_string(), message));
 
-    let max_size = msg_box.max_size;
-
-    msg_box.queue[i].1.truncate(max_size);
+    queue[i].1.truncate(max_size);
 
     Ok(())
 }
@@ -148,17 +146,20 @@ fn send_message_intern(msg_box: &mut MutexGuard<MsgBoxIntern>, sender: &str, rec
 pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
 
-    send_message_intern(&mut msg_box, sender, receiver, message)
+    let max_size = msg_box.max_size;
+
+    send_message_intern(&mut msg_box.queue, max_size, sender, receiver, message)
 }
 
 pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, message: MsgData) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
     let i = get_group_index(&msg_box.groups, group)?;
+    let max_size = msg_box.max_size;
 
     let groups = msg_box.groups[i].clone();
 
     for receiver in groups.borrow().1.iter() {
-        send_message_intern(&mut msg_box, sender, receiver, message.clone())?
+        send_message_intern(&mut msg_box.queue, max_size, sender, receiver, message.clone())?
     }
 
     Ok(())
