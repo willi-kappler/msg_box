@@ -76,7 +76,7 @@ fn has_group(msg_box: &MutexGuard<MsgBoxIntern>, group: &str) -> bool {
 pub fn new_msg_box(max_size: usize) -> MsgBox {
     let msg_box = MsgBoxIntern {
         max_size,
-        queue: Vec::new(), // TODO: with capacity
+        queue: Vec::with_capacity(max_size),
         groups: Vec::new(),
     };
 
@@ -132,7 +132,6 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
     Ok(())
 }
 
-// TODO: use queue instead of msg_box
 fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
     let i = get_receiver_index(queue, receiver)?;
 
