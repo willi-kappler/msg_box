@@ -1,27 +1,14 @@
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::any::Any;
 
 // use log::{error, debug};
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MsgData {
-    Mbool(bool),
-    Mu8(u8),
-    Mu16(u16),
-    Mu32(u32),
-    Mu64(u64),
-    Mf32(f32),
-    Mf64(f64),
-    Mchar(char),
-    Mstring(String),
-    Mvector(Vec<MsgData>),
-}
-
-type MsgQueue = Vec<(String, Vec<(String, MsgData)>)>;
+type MsgQueue = Vec<(String, Vec<(String, Rc<dyn Any>)>)>;
 type MsgGroup = Vec<Rc<RefCell<(String, Vec<String>)>>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MsgBoxIntern {
     max_size: usize,
     queue: MsgQueue,
@@ -132,7 +119,7 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
     Ok(())
 }
 
-fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
+fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: Rc<dyn Any>) -> Result<(), MsgError> {
     let i = get_receiver_index(queue, receiver)?;
 
     queue[i].1.insert(0, (sender.to_string(), message));
@@ -142,20 +129,21 @@ fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, rec
     Ok(())
 }
 
-pub fn send_message(msg_box: &MsgBox, sender: &str, receiver: &str, message: MsgData) -> Result<(), MsgError> {
+pub fn send_message<T: Any>(msg_box: &MsgBox, sender: &str, receiver: &str, message: T) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
 
     let max_size = msg_box.max_size;
 
-    send_message_intern(&mut msg_box.queue, max_size, sender, receiver, message)
+    send_message_intern(&mut msg_box.queue, max_size, sender, receiver, Rc::new(message))
 }
 
-pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, message: MsgData) -> Result<(), MsgError> {
+pub fn send_message_to_group<T: Any>(msg_box: &MsgBox, sender: &str, group: &str, message: T) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
     let i = get_group_index(&msg_box.groups, group)?;
     let max_size = msg_box.max_size;
 
     let groups = msg_box.groups[i].clone();
+    let message = Rc::new(message);
 
     for receiver in groups.borrow().1.iter() {
         send_message_intern(&mut msg_box.queue, max_size, sender, receiver, message.clone())?
@@ -164,9 +152,25 @@ pub fn send_message_to_group(msg_box: &MsgBox, sender: &str, group: &str, messag
     Ok(())
 }
 
-pub fn get_next_message(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, MsgData)>, MsgError> {
+pub fn get_next_message<T: 'static>(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, Rc<T>)>, MsgError> {
     let mut msg_box = msg_box.lock()?;
     let i = get_receiver_index(&msg_box.queue, receiver)?;
+    let messages = &mut msg_box.queue[i].1;
+    let mut msg_index = None;
 
-    Ok(msg_box.queue[i].1.pop())
+    for j in 0..messages.len() {
+        if (*(messages[j].1)).is::<T>() {
+            msg_index = Some(j);
+            break
+        }
+    }
+
+    if let Some(j) = msg_index {
+        let (sender, message) = messages.remove(j);
+        // The downcast will work since we already checked the type above.
+        let message = message.downcast::<T>().unwrap();
+        return Ok(Some((sender, message)))
+    }
+
+    Ok(None)
 }
