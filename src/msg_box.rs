@@ -119,6 +119,9 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
     Ok(())
 }
 
+// TODO: Remove Receiver from group
+// pub fn remove_receiver_from_group
+
 fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: Rc<dyn Any>) -> Result<(), MsgError> {
     let i = get_receiver_index(queue, receiver)?;
 
