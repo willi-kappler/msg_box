@@ -1,4 +1,6 @@
-use msg_box::{MsgData, MsgError, new_msg_box, add_new_receiver, send_message, get_next_message,
+use std::rc::Rc;
+
+use msg_box::{MsgError, new_msg_box, add_new_receiver, send_message, get_next_message,
     remove_receiver, add_new_group, remove_group, add_receiver_to_group, send_message_to_group};
 
 #[test]
@@ -17,7 +19,7 @@ fn receiver_not_found1() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
 
-    let result = get_next_message(&mb, "receiver02");
+    let result = get_next_message::<u8>(&mb, "receiver02");
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver02".to_string())));
 }
 
@@ -45,12 +47,12 @@ fn receiver_not_found4() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
 
-    let result = get_next_message(&mb, "receiver01").unwrap();
+    let result = get_next_message::<u8>(&mb, "receiver01").unwrap();
     assert_eq!(result, None);
 
     remove_receiver(&mb, "receiver01").unwrap();
 
-    let result = get_next_message(&mb, "receiver01");
+    let result = get_next_message::<u8>(&mb, "receiver01");
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver01".to_string())));
 }
 
@@ -58,7 +60,7 @@ fn receiver_not_found4() {
 fn receiver_not_found5() {
     let mb = new_msg_box(64);
 
-    let result = send_message(&mb, "sender01", "receiver01", MsgData::Mu8(16));
+    let result = send_message(&mb, "sender01", "receiver01", 16_u8);
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver01".to_string())));
 }
 
@@ -68,7 +70,7 @@ fn receiver_not_found6() {
 
     add_new_receiver(&mb, "receiver01").unwrap();
 
-    let result = send_message(&mb, "sender01", "receiver02", MsgData::Mu8(16));
+    let result = send_message(&mb, "sender01", "receiver02", 16_u8);
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver02".to_string())));
 }
 
@@ -81,11 +83,11 @@ fn receiver_not_found7() {
     add_receiver_to_group(&mb, "group01", "receiver01").unwrap();
     add_receiver_to_group(&mb, "group01", "receiver02").unwrap();
 
-    let result = send_message_to_group(&mb, "sender01", "group01", MsgData::Mu8(8));
+    let result = send_message_to_group(&mb, "sender01", "group01", 8_u8);
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver02".to_string())));
 
-    let result = get_next_message(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), MsgData::Mu8(8))));
+    let result = get_next_message::<u8>(&mb, "receiver01").unwrap();
+    assert_eq!(result, Some(("sender01".to_string(), Rc::new(8))));
 }
 
 #[test]
@@ -130,7 +132,7 @@ fn group_not_found3() {
 fn group_not_found4() {
     let mb = new_msg_box(64);
 
-    let result = send_message_to_group(&mb, "sender01", "group01", MsgData::Mu8(8));
+    let result = send_message_to_group(&mb, "sender01", "group01", 8_u8);
 
     assert_eq!(result, Err(MsgError::GroupNotFound("group01".to_string())));
 }
