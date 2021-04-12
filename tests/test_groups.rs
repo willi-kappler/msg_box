@@ -1,4 +1,4 @@
-use msg_box::{new_msg_box, add_new_receiver, add_new_group, add_receiver_to_group, send_message, send_message_to_group, get_next_message, MsgData};
+use msg_box::{new_msg_box, add_new_receiver, add_new_group, add_receiver_to_group, send_message, send_message_to_group, get_next_message};
 
 #[test]
 fn test_group1() {

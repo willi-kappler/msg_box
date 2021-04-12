@@ -1,4 +1,4 @@
-use msg_box::{new_msg_box, add_new_receiver, send_message, get_next_message, MsgData};
+use msg_box::{new_msg_box, add_new_receiver, send_message, get_next_message};
 
 #[test]
 fn test_max_size1_1() {
