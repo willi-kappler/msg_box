@@ -125,7 +125,7 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
 fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: Rc<dyn Any>) -> Result<(), MsgError> {
     let i = get_receiver_index(queue, receiver)?;
 
-    queue[i].1.insert(0, (sender.to_string(), message));
+    queue[i].1.push((sender.to_string(), message));
 
     queue[i].1.truncate(max_size);
 
