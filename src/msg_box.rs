@@ -5,7 +5,7 @@ use std::any::Any;
 
 // use log::{error, debug};
 
-type MsgQueue = Vec<(String, Vec<(String, Rc<dyn Any>)>)>;
+type MsgQueue = Vec<(String, Vec<(String, Box<dyn Any>)>)>;
 type MsgGroup = Vec<Rc<RefCell<(String, Vec<String>)>>>;
 
 #[derive(Debug)]
@@ -122,7 +122,7 @@ pub fn add_receiver_to_group(msg_box: &MsgBox, group: &str, receiver: &str) -> R
 // TODO: Remove Receiver from group
 // pub fn remove_receiver_from_group
 
-fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: Rc<dyn Any>) -> Result<(), MsgError> {
+fn send_message_intern(queue: &mut MsgQueue, max_size: usize,  sender: &str, receiver: &str, message: Box<dyn Any>) -> Result<(), MsgError> {
     let i = get_receiver_index(queue, receiver)?;
 
     queue[i].1.push((sender.to_string(), message));
@@ -137,16 +137,16 @@ pub fn send_message<T: Any>(msg_box: &MsgBox, sender: &str, receiver: &str, mess
 
     let max_size = msg_box.max_size;
 
-    send_message_intern(&mut msg_box.queue, max_size, sender, receiver, Rc::new(message))
+    send_message_intern(&mut msg_box.queue, max_size, sender, receiver, Box::new(message))
 }
 
-pub fn send_message_to_group<T: Any>(msg_box: &MsgBox, sender: &str, group: &str, message: T) -> Result<(), MsgError> {
+pub fn send_message_to_group<T: Any + Clone>(msg_box: &MsgBox, sender: &str, group: &str, message: T) -> Result<(), MsgError> {
     let mut msg_box = msg_box.lock()?;
     let i = get_group_index(&msg_box.groups, group)?;
     let max_size = msg_box.max_size;
 
     let groups = msg_box.groups[i].clone();
-    let message = Rc::new(message);
+    let message = Box::new(message);
 
     for receiver in groups.borrow().1.iter() {
         send_message_intern(&mut msg_box.queue, max_size, sender, receiver, message.clone())?
@@ -155,7 +155,7 @@ pub fn send_message_to_group<T: Any>(msg_box: &MsgBox, sender: &str, group: &str
     Ok(())
 }
 
-pub fn get_next_message<T: 'static>(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, Rc<T>)>, MsgError> {
+pub fn get_next_message<T: 'static>(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, Box<T>)>, MsgError> {
     let mut msg_box = msg_box.lock()?;
     let i = get_receiver_index(&msg_box.queue, receiver)?;
     let messages = &mut msg_box.queue[i].1;

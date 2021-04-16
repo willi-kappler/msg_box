@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use msg_box::{MsgError, new_msg_box, add_new_receiver, send_message, get_next_message,
     remove_receiver, add_new_group, remove_group, add_receiver_to_group, send_message_to_group};
 
@@ -87,7 +85,7 @@ fn receiver_not_found7() {
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver02".to_string())));
 
     let result = get_next_message::<u8>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(8))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(8))));
 }
 
 #[test]

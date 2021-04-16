@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use msg_box::{new_msg_box, add_new_receiver, send_message, get_next_message};
 
 #[test]
@@ -11,7 +9,7 @@ fn create_msg_box() {
     send_message(&mb, "sender01", "receiver01", 16_u8).unwrap();
 
     let result = get_next_message::<u8>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(16))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(16))));
 }
 
 #[test]
@@ -25,10 +23,10 @@ fn test_two_receivers() {
     send_message(&mb, "sender01", "receiver02", "World".to_string()).unwrap();
 
     let result = get_next_message::<String>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new("Hello".to_string()))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new("Hello".to_string()))));
 
     let result = get_next_message::<String>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new("World".to_string()))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new("World".to_string()))));
 }
 
 #[test]
@@ -44,16 +42,16 @@ fn test_two_senders() {
     send_message(&mb, "sender02", "receiver02", 12_u16).unwrap();
 
     let result = get_next_message::<String>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new("Hello".to_string()))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new("Hello".to_string()))));
 
     let result = get_next_message::<u16>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender02".to_string(), Rc::new(9))));
+    assert_eq!(result, Some(("sender02".to_string(), Box::new(9))));
 
     let result = get_next_message::<String>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new("World".to_string()))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new("World".to_string()))));
 
     let result = get_next_message::<u16>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender02".to_string(), Rc::new(12))));
+    assert_eq!(result, Some(("sender02".to_string(), Box::new(12))));
 }
 
 #[test]
@@ -66,7 +64,7 @@ fn test_empty() {
     send_message(&mb, "sender01", "receiver01", 16_u32).unwrap();
 
     let result = get_next_message::<u32>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(16))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(16))));
 
     let result = get_next_message::<u8>(&mb, "receiver01").unwrap();
     assert_eq!(result, None);
@@ -94,32 +92,32 @@ fn test_types() {
     send_message(&mb, "sender01", "receiver02", vec![(50_u8, false, 'R'), (12_u8, true, 'A')]).unwrap();
 
     let result = get_next_message::<bool>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(true))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(true))));
 
     let result = get_next_message::<u8>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(8))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(8))));
 
     let result = get_next_message::<u16>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(16))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(16))));
 
     let result = get_next_message::<u32>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(32))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(32))));
 
     let result = get_next_message::<u64>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(64))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(64))));
 
     let result = get_next_message::<f32>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(32.1))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(32.1))));
 
     let result = get_next_message::<f64>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(64.2))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(64.2))));
 
     let result = get_next_message::<char>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new('X'))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new('X'))));
 
     let result = get_next_message::<String>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new("cool types!".to_string()))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new("cool types!".to_string()))));
 
     let result = get_next_message::<Vec<(u8, bool, char)>>(&mb, "receiver02").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Rc::new(vec![(50_u8, false, 'R'), (12_u8, true, 'A')]))));
+    assert_eq!(result, Some(("sender01".to_string(), Box::new(vec![(50_u8, false, 'R'), (12_u8, true, 'A')]))));
 }
