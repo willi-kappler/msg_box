@@ -85,7 +85,7 @@ fn receiver_not_found7() {
     assert_eq!(result, Err(MsgError::ReceiverNotFound("receiver02".to_string())));
 
     let result = get_next_message::<u8>(&mb, "receiver01").unwrap();
-    assert_eq!(result, Some(("sender01".to_string(), Box::new(8))));
+    assert_eq!(result, Some(("sender01".to_string(), 8_u8)));
 }
 
 #[test]

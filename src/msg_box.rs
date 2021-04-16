@@ -155,7 +155,7 @@ pub fn send_message_to_group<T: Any + Clone>(msg_box: &MsgBox, sender: &str, gro
     Ok(())
 }
 
-pub fn get_next_message<T: 'static>(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, Box<T>)>, MsgError> {
+pub fn get_next_message<T: 'static>(msg_box: &MsgBox, receiver: &str) -> Result<Option<(String, T)>, MsgError> {
     let mut msg_box = msg_box.lock()?;
     let i = get_receiver_index(&msg_box.queue, receiver)?;
     let messages = &mut msg_box.queue[i].1;
@@ -172,7 +172,7 @@ pub fn get_next_message<T: 'static>(msg_box: &MsgBox, receiver: &str) -> Result<
         let (sender, message) = messages.remove(j);
         // The downcast will work since we already checked the type above.
         let message = message.downcast::<T>().unwrap();
-        return Ok(Some((sender, message)))
+        return Ok(Some((sender, *message)))
     }
 
     Ok(None)
